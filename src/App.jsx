@@ -6,8 +6,11 @@ function App() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+
   const [authMode, setAuthMode] = useState('login')
   const [authMessage, setAuthMessage] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -16,8 +19,13 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
       setSession(currentSession)
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResetting(true)
+        setAuthMode('reset')
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -26,6 +34,11 @@ function App() {
   async function handleAuth(event) {
     event.preventDefault()
     setAuthMessage('Please wait...')
+
+    if (!email || !password) {
+      setAuthMessage('Please enter email and password.')
+      return
+    }
 
     if (authMode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({
@@ -51,9 +64,58 @@ function App() {
       }
 
       setAuthMessage(
-        'Account created. Email confirmation required if enabled.'
+        'Account created. Please check your email for confirmation.'
       )
     }
+  }
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setAuthMessage('Please enter your email first.')
+      return
+    }
+
+    setAuthMessage('Sending password reset link...')
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    })
+
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+
+    setAuthMessage(
+      'Password reset link sent. Please check your email.'
+    )
+  }
+
+  async function handleResetPassword(event) {
+    event.preventDefault()
+
+    if (!newPassword || newPassword.length < 6) {
+      setAuthMessage('Password must be at least 6 characters.')
+      return
+    }
+
+    setAuthMessage('Updating password...')
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+
+    setAuthMessage('Password updated successfully. Please login again.')
+    setNewPassword('')
+    setIsResetting(false)
+    setAuthMode('login')
+
+    await supabase.auth.signOut()
   }
 
   async function logout() {
@@ -69,38 +131,76 @@ function App() {
           </h1>
 
           <p className="mt-2 text-slate-500">
-            {authMode === 'login'
-              ? 'Login to manage your leads'
-              : 'Create your RicozLeads account'}
+            {authMode === 'signup'
+              ? 'Create your RicozLeads account'
+              : authMode === 'reset'
+                ? 'Create a new password'
+                : 'Login to manage your leads'}
           </p>
 
-          <form onSubmit={handleAuth} className="mt-6 space-y-4">
-            <input
-              className="w-full rounded-lg border p-3"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-
-            <input
-              className="w-full rounded-lg border p-3"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-
-            <button
-              className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700"
-              type="submit"
+          {authMode === 'reset' ? (
+            <form
+              onSubmit={handleResetPassword}
+              className="mt-6 space-y-4"
             >
-              {authMode === 'login' ? 'Login' : 'Sign Up'}
-            </button>
-          </form>
+              <input
+                className="w-full rounded-lg border p-3"
+                type="password"
+                placeholder="New password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+
+              <button
+                className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700"
+                type="submit"
+              >
+                Update Password
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleAuth} className="mt-6 space-y-4">
+              <input
+                className="w-full rounded-lg border p-3"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+
+              <input
+                className="w-full rounded-lg border p-3"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+
+              {authMode === 'login' && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
+              <button
+                className="w-full rounded-lg bg-blue-600 p-3 font-semibold text-white hover:bg-blue-700"
+                type="submit"
+              >
+                {authMode === 'login' ? 'Login' : 'Sign Up'}
+              </button>
+            </form>
+          )}
 
           {authMessage && (
             <p className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
@@ -108,17 +208,19 @@ function App() {
             </p>
           )}
 
-          <button
-            className="mt-4 w-full text-sm text-blue-600 hover:underline"
-            onClick={() => {
-              setAuthMode(authMode === 'login' ? 'signup' : 'login')
-              setAuthMessage('')
-            }}
-          >
-            {authMode === 'login'
-              ? 'Create a new account'
-              : 'Already have an account? Login'}
-          </button>
+          {authMode !== 'reset' && (
+            <button
+              className="mt-4 w-full text-sm text-blue-600 hover:underline"
+              onClick={() => {
+                setAuthMode(authMode === 'login' ? 'signup' : 'login')
+                setAuthMessage('')
+              }}
+            >
+              {authMode === 'login'
+                ? 'Create a new account'
+                : 'Already have an account? Login'}
+            </button>
+          )}
         </div>
       </div>
     )
