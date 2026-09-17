@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
-import "./index.css";
+import './index.css'
 
 const statusStyles = {
   New: 'status-new',
@@ -107,7 +107,7 @@ function App() {
     setAuthMessage(
       authMode === 'login'
         ? 'Welcome back to your dashboard.'
-        : 'Account created successfully. Please check your email for confirmation.'
+        : 'Account created successfully. Please check your email for confirmation.',
     )
   }
 
@@ -124,7 +124,7 @@ function App() {
     setAuthMessage(
       error
         ? error.message
-        : 'Password reset link sent. Please check your email.'
+        : 'Password reset link sent. Please check your email.',
     )
   }
 
@@ -187,7 +187,9 @@ function App() {
 
           <section className="hero-section">
             <div className="hero-content">
-              <span className="eyebrow">Smart lead management made simple</span>
+              <span className="eyebrow">
+                Smart lead management made simple
+              </span>
 
               <h2>
                 Turn every lead into a
@@ -304,15 +306,21 @@ function App() {
 
             <h2>Plans that grow with your business</h2>
 
-            <p>Start free today. Upgrade whenever your business needs more power.</p>
+            <p>
+              Start free today. Upgrade whenever your business needs more power.
+            </p>
 
             <div className="plans-grid">
               {landingPlans.map((plan) => (
                 <article
-                  className={`plan-card ${plan.featured ? 'featured-plan' : ''}`}
+                  className={`plan-card ${
+                    plan.featured ? 'featured-plan' : ''
+                  }`}
                   key={plan.name}
                 >
-                  {plan.featured && <span className="popular-tag">Most popular</span>}
+                  {plan.featured && (
+                    <span className="popular-tag">Most popular</span>
+                  )}
 
                   <h3>{plan.name}</h3>
                   <p>{plan.description}</p>
@@ -332,7 +340,9 @@ function App() {
                     className="primary-button full-button"
                     onClick={() => openAuth('signup')}
                   >
-                    {plan.name === 'Free' ? 'Start for Free' : `Choose ${plan.name}`}
+                    {plan.name === 'Free'
+                      ? 'Start for Free'
+                      : `Choose ${plan.name}`}
                   </button>
                 </article>
               ))}
@@ -428,7 +438,9 @@ function App() {
                 )}
 
                 <button className="primary-button full-button">
-                  {authMode === 'login' ? 'Login to Dashboard' : 'Create Account'}
+                  {authMode === 'login'
+                    ? 'Login to Dashboard'
+                    : 'Create Account'}
                 </button>
               </form>
             )}
@@ -483,7 +495,11 @@ function FlyingHelpRobot() {
   function getBotAnswer(text) {
     const value = text.toLowerCase()
 
-    if (value.includes('add') || value.includes('create') || value.includes('new lead')) {
+    if (
+      value.includes('add') ||
+      value.includes('create') ||
+      value.includes('new lead')
+    ) {
       return 'To add a lead, fill the Full Name and Email fields, then click Save Lead.'
     }
 
@@ -733,7 +749,12 @@ function Dashboard({ session, logout }) {
       return
     }
 
-    setMessage(editingId ? 'Lead updated successfully.' : 'New lead added successfully.')
+    setMessage(
+      editingId
+        ? 'Lead updated successfully.'
+        : 'New lead added successfully.',
+    )
+
     clear()
     await load()
   }
@@ -751,8 +772,8 @@ function Dashboard({ session, logout }) {
 
     setLeads((items) =>
       items.map((item) =>
-        item.id === id ? { ...item, status: value } : item
-      )
+        item.id === id ? { ...item, status: value } : item,
+      ),
     )
   }
 
@@ -799,10 +820,11 @@ function Dashboard({ session, logout }) {
   }).length
 
   const dueTodayCount = leads.filter((lead) => {
-    return (
-      lead.follow_up_date === today &&
-      lead.status !== 'Converted'
-    )
+    return lead.follow_up_date === today && lead.status !== 'Converted'
+  }).length
+
+  const upcomingCount = leads.filter((lead) => {
+    return lead.follow_up_date > today && lead.status !== 'Converted'
   }).length
 
   const convertedCount = count('Converted')
@@ -828,6 +850,8 @@ function Dashboard({ session, logout }) {
     })
   }, [leads, search, filter])
 
+  const recentLeads = leads.slice(0, 5)
+
   return (
     <main className="dashboard-page">
       <div className="page-container">
@@ -835,7 +859,9 @@ function Dashboard({ session, logout }) {
           <div>
             <span className="eyebrow">Online Command Center</span>
             <h1>Welcome back</h1>
-            <p>Manage your customer leads from one simple dashboard.</p>
+            <p>
+              Here is what is happening with your customer pipeline today.
+            </p>
             <strong className="user-email">{session.user.email}</strong>
             <span className="current-plan">Current Plan: {selectedPlan}</span>
           </div>
@@ -853,6 +879,207 @@ function Dashboard({ session, logout }) {
             </button>
           </div>
         </header>
+
+        <section className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-top">
+              <span>Total Leads</span>
+              <strong>👥</strong>
+            </div>
+
+            <h2>{leads.length}</h2>
+
+            <p className="stat-description">
+              All customers and potential customers in your pipeline.
+            </p>
+
+            <span className="stat-helper">Complete pipeline</span>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span>New Leads</span>
+              <strong>✨</strong>
+            </div>
+
+            <h2>{count('New')}</h2>
+
+            <p className="stat-description">
+              Leads waiting for their first contact or response.
+            </p>
+
+            <span className="stat-helper">Ready to contact</span>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span>Contacted</span>
+              <strong>📞</strong>
+            </div>
+
+            <h2>{count('Contacted')}</h2>
+
+            <p className="stat-description">
+              Customers you have already reached and are following up with.
+            </p>
+
+            <span className="stat-helper">Follow-up in progress</span>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span>Converted</span>
+              <strong>🎯</strong>
+            </div>
+
+            <h2>{convertedCount}</h2>
+
+            <p className="stat-description">
+              Leads that became successful customers.
+            </p>
+
+            <span className="stat-helper">Successful customers</span>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span>Conversion Rate</span>
+              <strong>📈</strong>
+            </div>
+
+            <h2>{conversionRate}%</h2>
+
+            <p className="stat-description">
+              Percentage of total leads converted into customers.
+            </p>
+
+            <span className="stat-helper">Based on all leads</span>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-top">
+              <span>Overdue</span>
+              <strong>⚠️</strong>
+            </div>
+
+            <h2>{overdueCount}</h2>
+
+            <p className="stat-description">
+              Follow-ups that passed their due date and need attention.
+            </p>
+
+            <span className="stat-helper">
+              {overdueCount > 0 ? 'Needs attention' : 'All caught up'}
+            </span>
+          </div>
+        </section>
+
+        <section className="dashboard-card pipeline-section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Sales Overview</span>
+              <h2>Lead Pipeline</h2>
+            </div>
+
+            <span className="result-count">{leads.length} total leads</span>
+          </div>
+
+          <div className="pipeline-grid">
+            <div className="pipeline-card">
+              <div className="pipeline-icon">✨</div>
+
+              <div>
+                <h3>New Leads</h3>
+                <strong>{count('New')}</strong>
+                <p>Waiting for first contact.</p>
+              </div>
+            </div>
+
+            <div className="pipeline-card">
+              <div className="pipeline-icon">📞</div>
+
+              <div>
+                <h3>Contacted</h3>
+                <strong>{count('Contacted')}</strong>
+                <p>Conversation is in progress.</p>
+              </div>
+            </div>
+
+            <div className="pipeline-card">
+              <div className="pipeline-icon">🎯</div>
+
+              <div>
+                <h3>Converted</h3>
+                <strong>{convertedCount}</strong>
+                <p>Successfully became customers.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pipeline-bar">
+            <div
+              className="pipeline-new"
+              style={{
+                width: `${
+                  leads.length ? (count('New') / leads.length) * 100 : 0
+                }%`,
+              }}
+            />
+
+            <div
+              className="pipeline-contacted"
+              style={{
+                width: `${
+                  leads.length ? (count('Contacted') / leads.length) * 100 : 0
+                }%`,
+              }}
+            />
+
+            <div
+              className="pipeline-converted"
+              style={{
+                width: `${
+                  leads.length ? (convertedCount / leads.length) * 100 : 0
+                }%`,
+              }}
+            />
+          </div>
+        </section>
+
+        <section className="dashboard-card overview-section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Follow-up Overview</span>
+              <h2>Today’s Activity</h2>
+            </div>
+          </div>
+
+          <div className="activity-grid">
+            <div className="activity-card">
+              <span>📅</span>
+              <div>
+                <strong>{dueTodayCount}</strong>
+                <p>Due Today</p>
+              </div>
+            </div>
+
+            <div className="activity-card">
+              <span>🗓️</span>
+              <div>
+                <strong>{upcomingCount}</strong>
+                <p>Upcoming</p>
+              </div>
+            </div>
+
+            <div className="activity-card">
+              <span>⚠️</span>
+              <div>
+                <strong>{overdueCount}</strong>
+                <p>Overdue</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {showPricing && (
           <section className="premium-section">
@@ -880,52 +1107,38 @@ function Dashboard({ session, logout }) {
                       setMessage(
                         plan.name === 'Free'
                           ? 'You are currently using the Free plan.'
-                          : `${plan.name} plan selected. Payment integration can be connected next.`
+                          : `${plan.name} plan selected. Payment integration can be connected next.`,
                       )
                     }}
                   >
-                    {selectedPlan === plan.name ? 'Current Plan' : `Choose ${plan.name}`}
+                    {selectedPlan === plan.name
+                      ? 'Current Plan'
+                      : `Choose ${plan.name}`}
                   </button>
                 </article>
               ))}
             </div>
 
             <p className="payment-note">
-              Payment is not connected yet. Plan selection is currently a frontend preview.
+              Payment is not connected yet. Plan selection is currently a
+              frontend preview.
             </p>
           </section>
         )}
-
-        <section className="stats-grid">
-          {[
-            ['Total Leads', leads.length, '👥'],
-            ['New Leads', count('New'), '✨'],
-            ['Contacted', count('Contacted'), '📞'],
-            ['Converted', convertedCount, '🎯'],
-            ['Conversion Rate', `${conversionRate}%`, '📈'],
-            ['Overdue', overdueCount, '⚠️'],
-          ].map(([label, value, icon]) => (
-            <div className="stat-card" key={label}>
-              <div className="stat-top">
-                <span>{label}</span>
-                <strong>{icon}</strong>
-              </div>
-              <h2>{value}</h2>
-            </div>
-          ))}
-        </section>
 
         {(overdueCount > 0 || dueTodayCount > 0) && (
           <section className="alerts-grid">
             {dueTodayCount > 0 && (
               <div className="alert today-alert">
-                You have {dueTodayCount} follow-up{dueTodayCount > 1 ? 's' : ''} due today.
+                You have {dueTodayCount} follow-up
+                {dueTodayCount > 1 ? 's' : ''} due today.
               </div>
             )}
 
             {overdueCount > 0 && (
               <div className="alert overdue-alert">
-                You have {overdueCount} overdue lead{overdueCount > 1 ? 's' : ''}.
+                You have {overdueCount} overdue lead
+                {overdueCount > 1 ? 's' : ''}.
               </div>
             )}
           </section>
@@ -972,7 +1185,9 @@ function Dashboard({ session, logout }) {
             <input
               type="date"
               value={form.follow_up_date}
-              onChange={(event) => change('follow_up_date', event.target.value)}
+              onChange={(event) =>
+                change('follow_up_date', event.target.value)
+              }
             />
 
             <textarea
@@ -988,6 +1203,79 @@ function Dashboard({ session, logout }) {
           </form>
 
           {message && <p className="dashboard-message">{message}</p>}
+        </section>
+
+        <section className="dashboard-card">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Recent Activity</span>
+              <h2>Recent Leads</h2>
+            </div>
+
+            <span className="result-count">{recentLeads.length} recent</span>
+          </div>
+
+          {loading ? (
+            <div className="empty-state">Loading your leads...</div>
+          ) : recentLeads.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🛰️</div>
+              <h3>No leads found</h3>
+              <p>Add your first lead to start building your customer pipeline.</p>
+            </div>
+          ) : (
+            <div className="leads-list">
+              {recentLeads.map((lead) => (
+                <article className="lead-card" key={lead.id}>
+                  <div className="lead-details">
+                    <div className="lead-avatar">
+                      {lead.full_name?.charAt(0)?.toUpperCase()}
+                    </div>
+
+                    <div>
+                      <h3>{lead.full_name}</h3>
+                      <p>{lead.email}</p>
+                      <p>{lead.phone || 'No phone number'}</p>
+
+                      {lead.follow_up_date && (
+                        <p className="followup-text">
+                          Follow-up: {lead.follow_up_date}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="lead-actions">
+                    <select
+                      className={statusStyles[lead.status] || statusStyles.New}
+                      value={lead.status || 'New'}
+                      onChange={(event) =>
+                        updateStatus(lead.id, event.target.value)
+                      }
+                    >
+                      <option>New</option>
+                      <option>Contacted</option>
+                      <option>Converted</option>
+                    </select>
+
+                    <button
+                      className="edit-button"
+                      onClick={() => editLead(lead)}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="delete-button"
+                      onClick={() => remove(lead.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="dashboard-card">
@@ -1012,7 +1300,7 @@ function Dashboard({ session, logout }) {
           <div className="section-heading">
             <div>
               <span className="eyebrow">Customer Pipeline</span>
-              <h2>Your Leads</h2>
+              <h2>All Leads</h2>
             </div>
 
             <span className="result-count">{visible.length} results</span>
@@ -1036,7 +1324,9 @@ function Dashboard({ session, logout }) {
 
                 return (
                   <article
-                    className={`lead-card ${overdue ? 'overdue-lead' : ''}`}
+                    className={`lead-card ${
+                      overdue ? 'overdue-lead' : ''
+                    }`}
                     key={lead.id}
                   >
                     <div className="lead-details">
@@ -1050,7 +1340,11 @@ function Dashboard({ session, logout }) {
                         <p>{lead.phone || 'No phone number'}</p>
 
                         {lead.follow_up_date && (
-                          <p className={overdue ? 'overdue-text' : 'followup-text'}>
+                          <p
+                            className={
+                              overdue ? 'overdue-text' : 'followup-text'
+                            }
+                          >
                             Follow-up: {lead.follow_up_date}
                             {overdue ? ' · Overdue' : ''}
                           </p>

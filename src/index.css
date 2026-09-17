@@ -1125,3 +1125,148 @@ select:focus {
     width: calc(100vw - 30px);
   }
 }
+.stat-description {
+  min-height: 66px;
+  margin: 0;
+  color: #b5b7d2;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.stat-helper {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(103, 232, 249, 0.1);
+  color: #a5f3fc;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pipeline-section {
+  margin-top: 22px;
+}
+
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pipeline-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.pipeline-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #67e8f9, #d946ef);
+  font-size: 26px;
+}
+
+.pipeline-card h3 {
+  margin: 0 0 8px;
+  color: #dbeafe;
+  font-size: 15px;
+}
+
+.pipeline-card strong {
+  display: block;
+  color: white;
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.pipeline-card p {
+  margin: 8px 0 0;
+  color: #aeb6df;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pipeline-bar {
+  display: flex;
+  overflow: hidden;
+  height: 12px;
+  margin-top: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pipeline-new {
+  background: #67e8f9;
+}
+
+.pipeline-contacted {
+  background: #c084fc;
+}
+
+.pipeline-converted {
+  background: #86efac;
+}
+
+.overview-section {
+  margin-top: 22px;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.activity-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.activity-card > span {
+  font-size: 30px;
+}
+
+.activity-card strong {
+  display: block;
+  color: white;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.activity-card p {
+  margin: 5px 0 0;
+  color: #b9c1e9;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .pipeline-grid,
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .stat-description {
+    min-height: auto;
+  }
+
+  .pipeline-card,
+  .activity-card {
+    padding: 16px;
+  }
+}
