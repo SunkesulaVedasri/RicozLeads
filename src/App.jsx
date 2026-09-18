@@ -334,7 +334,7 @@ function Dashboard({ session, logout }) {
           {view === 'invoices' && <ModuleView icon="₹" title="Invoices & Payments" text="Keep revenue conversations connected to your leads. Payment integration can be added next." items={['Create invoice','Pending payments','Paid invoices','Revenue summary']} />}
           {view === 'team' && <ModuleView icon="♙" title="Team Workspace" text="A team-ready area for assigning leads, sharing notes and monitoring activity." items={['Team members','Lead assignment','Activity feed','Roles & permissions']} />}
           {view === 'ai' && <AIView leads={leads} overdue={overdue} dueToday={dueToday} conversionRate={conversionRate} setAiOpen={setAiOpen} />}
-          {view === 'settings' && <ModuleView icon="⚙" title="Workspace Settings" text="Configure your RicozLeads workspace, notifications and future integrations." items={['Workspace profile','Notification preferences','Security','Integrations']} />}
+          {view === 'settings' && <SettingsView session={session} navigate={navigate} setMessage={setMessage} message={message} />}
         </main>
       </div>
 
@@ -443,6 +443,101 @@ function AIView({leads,overdue,dueToday,conversionRate,setAiOpen}) {
 function ModuleView({icon,title,text,items}) {
   return <div className="dashboard-content"><section className="module-hero"><span>{icon}</span><div><span className="eyebrow">RICOZ WORKSPACE MODULE</span><h2>{title}</h2><p>{text}</p></div></section><div className="module-grid">{items.map((x,i)=><article className="module-card" key={x}><span>{['＋','◒','✓','✦'][i%4]}</span><h3>{x}</h3><p>Ready for your workspace data and future integrations.</p><button>Open →</button></article>)}</div></div>
 }
+
+function SettingsView({session,navigate,setMessage,message}) {
+  const [workspace,setWorkspace] = useState(() => localStorage.getItem('ricoz_workspace_name') || 'My Business')
+  const [notifications,setNotifications] = useState(() => localStorage.getItem('ricoz_notifications') !== 'off')
+  const [reminders,setReminders] = useState(() => localStorage.getItem('ricoz_reminders') !== 'off')
+  const [compact,setCompact] = useState(() => localStorage.getItem('ricoz_compact') === 'on')
+  const [defaultView,setDefaultView] = useState(() => localStorage.getItem('ricoz_default_view') || 'overview')
+  const [newPassword,setNewPassword] = useState('')
+  const [savingPassword,setSavingPassword] = useState(false)
+
+  function saveWorkspace() {
+    const value = workspace.trim() || 'My Business'
+    setWorkspace(value)
+    localStorage.setItem('ricoz_workspace_name', value)
+    setMessage('Workspace name saved successfully.')
+  }
+
+  function toggle(key,setter,value) {
+    setter(value)
+    localStorage.setItem(key, value ? 'on' : 'off')
+    setMessage('Setting updated.')
+  }
+
+  function saveDefaultView(value) {
+    setDefaultView(value)
+    localStorage.setItem('ricoz_default_view', value)
+    setMessage('Default page saved.')
+  }
+
+  async function changePassword(event) {
+    event.preventDefault()
+    if (newPassword.length < 6) return setMessage('New password must be at least 6 characters.')
+    setSavingPassword(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setSavingPassword(false)
+    if (error) return setMessage(error.message)
+    setNewPassword('')
+    setMessage('Password updated successfully.')
+  }
+
+  return <div className="dashboard-content settings-page">
+    <section className="page-intro">
+      <div><span className="eyebrow">CONTROL CENTER</span><h2>Settings</h2><p>Personalize your RicozLeads workspace, alerts and security.</p></div>
+      <button className="secondary-button" onClick={() => navigate(defaultView)}>← Back to workspace</button>
+    </section>
+
+    {message && <div className="settings-message">✓ {message}</div>}
+
+    <section className="settings-hero">
+      <div className="settings-icon">⚙</div>
+      <div><span className="eyebrow">WORKSPACE PROFILE</span><h3>{workspace}</h3><p>{session.user.email}</p></div>
+      <span className="settings-status">● Active</span>
+    </section>
+
+    <div className="settings-grid">
+      <section className="panel settings-card">
+        <div className="settings-card-head"><div><span>🏢</span><div><h3>Workspace profile</h3><p>Change how your business appears inside RicozLeads.</p></div></div></div>
+        <label>Workspace name<input value={workspace} onChange={e=>setWorkspace(e.target.value)} placeholder="My Business" /></label>
+        <div className="setting-row"><div><strong>Account email</strong><small>{session.user.email}</small></div><em>Verified account</em></div>
+        <button className="primary-button" onClick={saveWorkspace}>Save workspace</button>
+      </section>
+
+      <section className="panel settings-card">
+        <div className="settings-card-head"><div><span>🔔</span><div><h3>Notifications</h3><p>Control the alerts RicozLeads shows you.</p></div></div></div>
+        <SettingToggle title="Follow-up alerts" text="Show reminders when a follow-up is due." value={reminders} onChange={v=>toggle('ricoz_reminders',setReminders,v)} />
+        <SettingToggle title="Workspace notifications" text="Allow important workspace activity alerts." value={notifications} onChange={v=>toggle('ricoz_notifications',setNotifications,v)} />
+      </section>
+
+      <section className="panel settings-card">
+        <div className="settings-card-head"><div><span>🧭</span><div><h3>Workspace preferences</h3><p>Choose how your dashboard behaves when you return.</p></div></div></div>
+        <label>Default opening page<select value={defaultView} onChange={e=>saveDefaultView(e.target.value)}><option value="overview">Overview</option><option value="leads">Leads</option><option value="followups">Follow-ups</option><option value="analytics">Analytics</option><option value="ai">Rico AI</option></select></label>
+        <SettingToggle title="Compact workspace" text="Use tighter cards and spacing for more information on screen." value={compact} onChange={v=>toggle('ricoz_compact',setCompact,v)} />
+      </section>
+
+      <section className="panel settings-card">
+        <div className="settings-card-head"><div><span>🔐</span><div><h3>Security</h3><p>Update your account password without leaving the app.</p></div></div></div>
+        <form onSubmit={changePassword} className="password-form"><label>New password<input type="password" minLength="6" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="At least 6 characters" required /></label><button className="primary-button" disabled={savingPassword}>{savingPassword?'Updating...':'Update password'}</button></form>
+      </section>
+
+      <section className="panel settings-card settings-wide">
+        <div className="settings-card-head"><div><span>🔗</span><div><h3>Integrations</h3><p>RicozLeads is structured to connect with your future business tools.</p></div></div></div>
+        <div className="integration-list"><Integration name="Supabase" text="Database & authentication" state="Connected"/><Integration name="Rico AI" text="Smart sales assistant" state="Ready"/><Integration name="Email & WhatsApp" text="Customer communication" state="Coming next"/></div>
+      </section>
+    </div>
+  </div>
+}
+
+function SettingToggle({title,text,value,onChange}) {
+  return <div className="setting-toggle"><div><strong>{title}</strong><small>{text}</small></div><button type="button" className={value?'toggle on':'toggle'} onClick={()=>onChange(!value)}><span /></button></div>
+}
+
+function Integration({name,text,state}) {
+  return <div className="integration-item"><div className="integration-logo">✦</div><div><strong>{name}</strong><small>{text}</small></div><em>{state}</em></div>
+}
+
 
 function Empty({icon='◌',text}) { return <div className="empty-state"><span>{icon}</span><strong>{text}</strong></div> }
 
