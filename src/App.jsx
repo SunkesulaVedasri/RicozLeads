@@ -441,7 +441,61 @@ function AIView({leads,overdue,dueToday,conversionRate,setAiOpen}) {
 }
 
 function ModuleView({icon,title,text,items}) {
-  return <div className="dashboard-content"><section className="module-hero"><span>{icon}</span><div><span className="eyebrow">RICOZ WORKSPACE MODULE</span><h2>{title}</h2><p>{text}</p></div></section><div className="module-grid">{items.map((x,i)=><article className="module-card" key={x}><span>{['＋','◒','✓','✦'][i%4]}</span><h3>{x}</h3><p>Ready for your workspace data and future integrations.</p><button>Open →</button></article>)}</div></div>
+  const [selected, setSelected] = useState(null)
+
+  const moduleInfo = {
+    'Proposal templates': { icon: '📝', desc: 'Create reusable proposal formats for franchise enquiries and customer conversations.', actions: ['Create proposal', 'View templates'] },
+    'Product brochures': { icon: '📚', desc: 'Keep Ricoz product and franchise brochures organized for quick sharing with prospects.', actions: ['Add brochure', 'View library'] },
+    'Customer documents': { icon: '📄', desc: 'Store customer-related documents beside the lead record so your team can find everything quickly.', actions: ['Upload document', 'View documents'] },
+    'Shared team files': { icon: '🤝', desc: 'A shared workspace for team resources, sales material and internal files.', actions: ['Add team file', 'View shared files'] },
+    'Create invoice': { icon: '🧾', desc: 'Prepare an invoice for a converted customer and keep payment information connected to the sales workflow.', actions: ['Create invoice', 'View invoices'] },
+    'Pending payments': { icon: '⏳', desc: 'Track invoices that are waiting for customer payment and follow up from one place.', actions: ['Add payment', 'View pending'] },
+    'Paid invoices': { icon: '✅', desc: 'Review completed payments and maintain a clean revenue history.', actions: ['Record payment', 'View paid'] },
+    'Revenue summary': { icon: '₹', desc: 'Get a quick view of invoice and payment activity. Advanced accounting integrations can be connected later.', actions: ['View summary', 'Export report'] },
+    'Team members': { icon: '👥', desc: 'Manage the people who work inside your RicozLeads workspace.', actions: ['Invite member', 'View members'] },
+    'Lead assignment': { icon: '🎯', desc: 'Plan how leads are distributed across your sales team.', actions: ['Assign leads', 'View assignments'] },
+    'Activity feed': { icon: '⚡', desc: 'Keep track of important workspace activity and sales actions.', actions: ['View activity', 'Create note'] },
+    'Roles & permissions': { icon: '🔐', desc: 'Define who can access different parts of the workspace.', actions: ['Manage roles', 'View permissions'] },
+  }
+
+  function openItem(item) {
+    setSelected({ item, ...(moduleInfo[item] || { icon: '✦', desc: 'This RicozLeads workspace feature is ready for your next workflow.', actions: ['Open workspace', 'Coming next'] }) })
+  }
+
+  return (
+    <div className="dashboard-content">
+      <section className="module-hero"><span>{icon}</span><div><span className="eyebrow">RICOZ WORKSPACE MODULE</span><h2>{title}</h2><p>{text}</p></div></section>
+      <div className="module-grid">
+        {items.map((x,i)=><article className="module-card" key={x}>
+          <span>{['＋','◒','✓','✦'][i%4]}</span><h3>{x}</h3><p>Open this workspace area to manage related information and actions.</p>
+          <button type="button" onClick={() => openItem(x)}>Open →</button>
+        </article>)}
+      </div>
+
+      {selected && (
+        <div className="module-modal-backdrop" onClick={() => setSelected(null)}>
+          <section className="module-modal" onClick={e => e.stopPropagation()}>
+            <button className="module-modal-close" type="button" onClick={() => setSelected(null)}>×</button>
+            <div className="module-modal-icon">{selected.icon}</div>
+            <span className="eyebrow">RICOZ WORKSPACE</span>
+            <h2>{selected.item}</h2>
+            <p>{selected.desc}</p>
+            <div className="module-modal-actions">
+              {selected.actions.map((action, i) => (
+                <button key={action} type="button" className={i === 0 ? 'primary-button' : 'secondary-button'} onClick={() => {
+                  if (action.toLowerCase().includes('coming')) return
+                  setSelected(current => ({ ...current, selectedAction: action }))
+                }}>{action} {i === 0 ? '→' : ''}</button>
+              ))}
+            </div>
+            {selected.selectedAction && !selected.selectedAction.toLowerCase().includes('coming') && (
+              <div className="module-action-note">✓ <strong>{selected.selectedAction}</strong> selected. This action is ready to connect to your Supabase storage/data workflow.</div>
+            )}
+          </section>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SettingsView({session,navigate,setMessage,message}) {
