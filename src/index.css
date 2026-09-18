@@ -26,3 +26,110 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 /* Interactive module cards and Open dialogs */
 .module-card button{cursor:pointer;transition:.18s}.module-card button:hover{transform:translateX(3px)}
 .module-modal-backdrop{position:fixed;inset:0;background:rgba(12,23,45,.48);z-index:120;display:grid;place-items:center;padding:20px}.module-modal{position:relative;width:min(520px,100%);background:#fff;border:1px solid #e1e7f1;border-radius:22px;padding:30px;box-shadow:0 30px 90px rgba(12,30,65,.28);animation:modulePop .18s ease-out}.module-modal-close{position:absolute;right:16px;top:14px;width:34px;height:34px;border:0;border-radius:50%;background:#f2f5f9;color:#53627b;font-size:22px;cursor:pointer}.module-modal-icon{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#eef5ff,#f7efff);display:grid;place-items:center;font-size:31px;margin-bottom:18px}.module-modal h2{margin:7px 0 8px;font-size:25px;color:#152a50}.module-modal p{color:#71809a;font-size:12px;line-height:1.7;margin:0}.module-modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.module-modal-actions button{cursor:pointer}.module-action-note{margin-top:17px;background:#eef9f4;border:1px solid #ccebdd;color:#197957;border-radius:11px;padding:11px 13px;font-size:10px;line-height:1.5}.module-action-note strong{margin-left:3px}@keyframes modulePop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+
+/* Ricoz reference-inspired card refinement */
+:root{
+  --ricoz-ink:#17213b;
+  --ricoz-border:#e2e7ef;
+  --ricoz-card-shadow:0 10px 28px rgba(32,52,91,.055);
+}
+
+.panel,
+.metric-card,
+.quick-card,
+.module-card,
+.feature-card,
+.pricing-card,
+.lead-row,
+.followup-row{
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.panel,
+.metric-card,
+.module-card,
+.feature-card,
+.pricing-card{
+  border-color:var(--ricoz-border);
+  box-shadow:var(--ricoz-card-shadow);
+}
+
+.panel:hover,
+.metric-card:hover,
+.module-card:hover,
+.feature-card:hover,
+.pricing-card:hover{
+  border-color:#d5deed;
+  box-shadow:0 14px 34px rgba(32,52,91,.075);
+}
+
+.metric-card{
+  border-radius:16px;
+  padding:17px;
+}
+
+.metric-top span{
+  background:#f0f5ff;
+  border:1px solid #e5edfb;
+}
+
+.metric-card>strong{
+  color:var(--ricoz-ink);
+  letter-spacing:-.02em;
+}
+
+.panel{
+  border-radius:18px;
+  padding:21px;
+}
+
+.quick-card{
+  border-radius:16px;
+  border-color:var(--ricoz-border);
+  box-shadow:0 7px 20px rgba(32,52,91,.035);
+}
+
+.quick-card:hover{
+  border-color:#c9d8f1;
+  box-shadow:0 12px 26px rgba(32,52,91,.075);
+}
+
+.lead-row{
+  background:#fff;
+  border-color:#e7ebf1;
+  border-radius:15px;
+  box-shadow:0 4px 14px rgba(32,52,91,.025);
+}
+
+.lead-row:hover{
+  border-color:#d2ddec;
+  box-shadow:0 9px 22px rgba(32,52,91,.06);
+  transform:translateY(-1px);
+}
+
+.module-card{
+  border-radius:17px;
+  min-height:175px;
+}
+
+.module-card:hover{
+  transform:translateY(-2px);
+}
+
+.feature-card{
+  border-radius:20px;
+}
+
+.settings-card{
+  box-shadow:var(--ricoz-card-shadow);
+}
+
+.welcome-banner{
+  border-color:#dfe6f0;
+  box-shadow:0 10px 28px rgba(32,52,91,.045);
+}
+
+.ai-brief{
+  box-shadow:0 8px 24px rgba(50,80,140,.035);
+}
