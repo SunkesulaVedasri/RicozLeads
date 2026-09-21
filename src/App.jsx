@@ -387,13 +387,22 @@ function Dashboard({ session, logout }) {
   )
 }
 
+function getTimeGreeting() {
+  const hour = new Date().getHours()
+
+  if (hour >= 5 && hour < 12) return 'Good Morning'
+  if (hour >= 12 && hour < 17) return 'Good Afternoon'
+  if (hour >= 17 && hour < 21) return 'Good Evening'
+  return 'Good Night'
+}
+
 function Overview({ leads, converted, conversionRate, overdue, dueToday, priorityLeads, navigate, setAiOpen }) {
   const newCount = leads.filter(l=>l.status==='New').length
   const contacted = leads.filter(l=>l.status==='Contacted').length
   return (
     <div className="dashboard-content">
       <section className="welcome-banner">
-        <div><span className="eyebrow">TODAY'S COMMAND CENTER</span><h2>Good morning 👋</h2><p>Here’s what needs your attention. Rico has already scanned your pipeline.</p></div>
+        <div><span className="eyebrow">TODAY'S COMMAND CENTER</span><h2>{getTimeGreeting()} 👋</h2><p>Here’s what needs your attention. Rico has already scanned your pipeline.</p></div>
         <div className="banner-actions"><button className="secondary-button" onClick={() => setAiOpen(true)}>✦ Ask Rico</button><button className="primary-button" onClick={() => navigate('leads')}>+ Add Lead</button></div>
       </section>
 
