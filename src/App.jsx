@@ -24,6 +24,29 @@ const navItems = [
 
 const statuses = ['New', 'Contacted', 'Converted']
 
+const dummyLeads = [
+  { full_name:'Arjun Reddy', email:'arjun.reddy.demo@ricozleads.com', phone:'+91 98765 43210', follow_up_date:new Date().toISOString().slice(0,10), notes:'Interested in franchise details. Call in the evening.', status:'New' },
+  { full_name:'Priya Sharma', email:'priya.sharma.demo@ricozleads.com', phone:'+91 98765 43211', follow_up_date:new Date(Date.now()+86400000).toISOString().slice(0,10), notes:'Requested product and pricing information.', status:'Contacted' },
+  { full_name:'Rahul Verma', email:'rahul.verma.demo@ricozleads.com', phone:'+91 98765 43212', follow_up_date:new Date(Date.now()-2*86400000).toISOString().slice(0,10), notes:'Follow-up pending after initial discussion.', status:'New' },
+  { full_name:'Sneha Kapoor', email:'sneha.kapoor.demo@ricozleads.com', phone:'+91 98765 43213', follow_up_date:new Date(Date.now()+3*86400000).toISOString().slice(0,10), notes:'Positive response. Schedule a detailed demo.', status:'Contacted' },
+  { full_name:'Vikram Rao', email:'vikram.rao.demo@ricozleads.com', phone:'+91 98765 43214', follow_up_date:new Date(Date.now()-4*86400000).toISOString().slice(0,10), notes:'Asked for a callback last week.', status:'Contacted' },
+  { full_name:'Ananya Patel', email:'ananya.patel.demo@ricozleads.com', phone:'+91 98765 43215', follow_up_date:new Date(Date.now()+5*86400000).toISOString().slice(0,10), notes:'Interested in starting next quarter.', status:'New' },
+  { full_name:'Kiran Kumar', email:'kiran.kumar.demo@ricozleads.com', phone:'+91 98765 43216', follow_up_date:new Date(Date.now()-86400000).toISOString().slice(0,10), notes:'Needs pricing confirmation before proceeding.', status:'Contacted' },
+  { full_name:'Meghana Reddy', email:'meghana.reddy.demo@ricozleads.com', phone:'+91 98765 43217', follow_up_date:new Date(Date.now()+2*86400000).toISOString().slice(0,10), notes:'Requested brochure and business details.', status:'New' },
+  { full_name:'Sandeep Singh', email:'sandeep.singh.demo@ricozleads.com', phone:'+91 98765 43218', follow_up_date:new Date(Date.now()+7*86400000).toISOString().slice(0,10), notes:'Demo completed. Waiting for final confirmation.', status:'Contacted' },
+  { full_name:'Divya Nair', email:'divya.nair.demo@ricozleads.com', phone:'+91 98765 43219', follow_up_date:new Date(Date.now()+4*86400000).toISOString().slice(0,10), notes:'Interested in a partnership discussion.', status:'New' },
+  { full_name:'Rohit Mehta', email:'rohit.mehta.demo@ricozleads.com', phone:'+91 98765 43220', follow_up_date:new Date(Date.now()-5*86400000).toISOString().slice(0,10), notes:'Old lead requiring re-engagement.', status:'New' },
+  { full_name:'Pooja Iyer', email:'pooja.iyer.demo@ricozleads.com', phone:'+91 98765 43221', follow_up_date:new Date(Date.now()+6*86400000).toISOString().slice(0,10), notes:'Asked for available plans.', status:'Contacted' },
+  { full_name:'Akhil Varma', email:'akhil.varma.demo@ricozleads.com', phone:'+91 98765 43222', follow_up_date:null, notes:'Successfully converted after final discussion.', status:'Converted' },
+  { full_name:'Nikhil Joshi', email:'nikhil.joshi.demo@ricozleads.com', phone:'+91 98765 43223', follow_up_date:new Date(Date.now()+10*86400000).toISOString().slice(0,10), notes:'Follow-up scheduled for next week.', status:'Contacted' },
+  { full_name:'Keerthi Rao', email:'keerthi.rao.demo@ricozleads.com', phone:'+91 98765 43224', follow_up_date:new Date(Date.now()-3*86400000).toISOString().slice(0,10), notes:'No response after first contact.', status:'New' },
+  { full_name:'Manoj Babu', email:'manoj.babu.demo@ricozleads.com', phone:'+91 98765 43225', follow_up_date:new Date(Date.now()+8*86400000).toISOString().slice(0,10), notes:'Interested but comparing options.', status:'Contacted' },
+  { full_name:'Swathi Reddy', email:'swathi.reddy.demo@ricozleads.com', phone:'+91 98765 43226', follow_up_date:null, notes:'Converted customer. Documentation completed.', status:'Converted' },
+  { full_name:'Tarun Kumar', email:'tarun.kumar.demo@ricozleads.com', phone:'+91 98765 43227', follow_up_date:new Date(Date.now()+3*86400000).toISOString().slice(0,10), notes:'Requested a call tomorrow afternoon.', status:'New' },
+  { full_name:'Lakshmi Prasad', email:'lakshmi.prasad.demo@ricozleads.com', phone:'+91 98765 43228', follow_up_date:new Date(Date.now()+12*86400000).toISOString().slice(0,10), notes:'Warm lead. Follow-up planned.', status:'Contacted' },
+  { full_name:'Varun Gupta', email:'varun.gupta.demo@ricozleads.com', phone:'+91 98765 43229', follow_up_date:new Date(Date.now()-6*86400000).toISOString().slice(0,10), notes:'Interested in franchise investment details.', status:'New' },
+]
+
 function App() {
   const [session, setSession] = useState(null)
   const [email, setEmail] = useState('')
@@ -227,8 +250,27 @@ function Dashboard({ session, logout }) {
   async function load() {
     setLoading(true)
     const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
-    if (error) setMessage(error.message)
-    else setLeads(data || [])
+    if (error) {
+      setMessage(error.message)
+      setLoading(false)
+      return
+    }
+
+    // Demo-friendly seed: populate the CRM once when the leads table is empty.
+    if (!data?.length) {
+      const { error: seedError } = await supabase.from('leads').insert(dummyLeads)
+      if (seedError) {
+        setMessage(seedError.message)
+        setLeads([])
+      } else {
+        const { data: seeded, error: reloadError } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
+        if (reloadError) setMessage(reloadError.message)
+        setLeads(seeded || [])
+        setMessage('Demo leads added successfully.')
+      }
+    } else {
+      setLeads(data)
+    }
     setLoading(false)
   }
 
@@ -345,21 +387,13 @@ function Dashboard({ session, logout }) {
   )
 }
 
-function getTimeGreeting() {
-  const hour = new Date().getHours()
-  if (hour >= 5 && hour < 12) return 'Good Morning'
-  if (hour >= 12 && hour < 17) return 'Good Afternoon'
-  if (hour >= 17 && hour < 21) return 'Good Evening'
-  return 'Good Night'
-}
-
 function Overview({ leads, converted, conversionRate, overdue, dueToday, priorityLeads, navigate, setAiOpen }) {
   const newCount = leads.filter(l=>l.status==='New').length
   const contacted = leads.filter(l=>l.status==='Contacted').length
   return (
     <div className="dashboard-content">
       <section className="welcome-banner">
-        <div><span className="eyebrow">TODAY'S COMMAND CENTER</span><h2>{getTimeGreeting()} 👋</h2><p>Here’s what needs your attention. Rico has already scanned your pipeline.</p></div>
+        <div><span className="eyebrow">TODAY'S COMMAND CENTER</span><h2>Good morning 👋</h2><p>Here’s what needs your attention. Rico has already scanned your pipeline.</p></div>
         <div className="banner-actions"><button className="secondary-button" onClick={() => setAiOpen(true)}>✦ Ask Rico</button><button className="primary-button" onClick={() => navigate('leads')}>+ Add Lead</button></div>
       </section>
 
