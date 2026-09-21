@@ -506,6 +506,7 @@ function InvoiceView({session,leads}) {
   const [form, setForm] = useState(emptyInvoice)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [sendingId, setSendingId] = useState(null)
   const [message, setMessage] = useState('')
   const [filter, setFilter] = useState('All')
 
@@ -547,9 +548,43 @@ function InvoiceView({session,leads}) {
     }))
   }
 
+  async function createPaymentLink(invoiceId) {
+    setSendingId(invoiceId)
+    setMessage('Creating secure Razorpay payment link and sending it to the customer...')
+
+    const { data, error } = await supabase.functions.invoke('create-payment-link', {
+      body: { invoice_id: invoiceId },
+    })
+
+    setSendingId(null)
+
+    if (error) {
+      setMessage(error.message || 'Could not create the payment link.')
+      return
+    }
+
+    if (data?.error) {
+      setMessage(data.error)
+      return
+    }
+
+    setInvoices(items => items.map(item =>
+      item.id === invoiceId
+        ? {
+            ...item,
+            payment_link_id: data.payment_link_id,
+            payment_link_url: data.payment_link_url,
+            payment_link_status: 'created',
+          }
+        : item
+    ))
+    setMessage('Payment link created. Razorpay will send the customer the payment notification.')
+  }
+
   async function saveInvoice(event) {
     event.preventDefault()
     if (!form.customer_name.trim()) return setMessage('Customer name is required.')
+    if (!form.customer_email.trim()) return setMessage('Customer email is required for payment delivery.')
     if (!form.amount || Number(form.amount) <= 0) return setMessage('Enter a valid invoice amount.')
 
     setSaving(true)
@@ -558,7 +593,7 @@ function InvoiceView({session,leads}) {
     const payload = {
       invoice_number: form.invoice_number.trim(),
       customer_name: form.customer_name.trim(),
-      customer_email: form.customer_email.trim() || null,
+      customer_email: form.customer_email.trim(),
       amount: Number(form.amount),
       due_date: form.due_date || null,
       status: form.status,
@@ -566,7 +601,11 @@ function InvoiceView({session,leads}) {
       user_id: session.user.id,
     }
 
-    const { error } = await supabase.from('invoices').insert([payload])
+    const { data, error } = await supabase
+      .from('invoices')
+      .insert([payload])
+      .select('*')
+      .single()
 
     setSaving(false)
 
@@ -575,17 +614,26 @@ function InvoiceView({session,leads}) {
       return
     }
 
-    setMessage('Invoice created successfully.')
     setShowForm(false)
     setForm({
       ...emptyInvoice,
       invoice_number: `INV-${Date.now().toString().slice(-6)}`,
     })
     await loadInvoices()
+
+    if (data?.id && data.status === 'Pending') {
+      await createPaymentLink(data.id)
+    } else {
+      setMessage('Invoice created successfully.')
+    }
   }
 
   async function updateInvoiceStatus(id, status) {
-    const { error } = await supabase.from('invoices').update({ status }).eq('id', id)
+    const { error } = await supabase
+      .from('invoices')
+      .update({ status })
+      .eq('id', id)
+
     if (error) return setMessage(error.message)
     setInvoices(items => items.map(item => item.id === id ? { ...item, status } : item))
   }
@@ -607,20 +655,20 @@ function InvoiceView({session,leads}) {
   const paid = invoices.filter(invoice => invoice.status === 'Paid')
 
   return (
-    <div className="dashboard-content invoice-page">
+    <div className="dashboard-content">
       <section className="page-intro">
         <div>
           <span className="eyebrow">REVENUE WORKSPACE</span>
           <h2>Invoices & Payments</h2>
-          <p>Create invoices, track payment status and keep revenue activity connected to your workspace.</p>
+          <p>Create invoices, send secure Razorpay payment links and track payment status automatically.</p>
         </div>
-        <button className="primary-button" onClick={openCreate}>+ Create Invoice</button>
+        <button className="primary-button" onClick={openCreate}>＋ Create Invoice</button>
       </section>
 
       {message && <div className="settings-message">✓ {message}</div>}
 
-      <section className="metric-grid invoice-metrics">
-        <Metric label="Total Invoices" value={invoices.length} icon="🧾" hint="Created invoices" />
+      <section className="metric-grid">
+        <Metric label="Total Invoices" value={invoices.length} icon="🧾" hint="All invoice records" />
         <Metric label="Pending" value={pending.length} icon="⏳" hint="Awaiting payment" />
         <Metric label="Paid" value={paid.length} icon="✓" hint="Completed payments" />
         <Metric label="Revenue" value={`₹${total.toLocaleString('en-IN')}`} icon="₹" hint="Invoice value" />
@@ -633,12 +681,12 @@ function InvoiceView({session,leads}) {
             <div className="module-modal-icon">🧾</div>
             <span className="eyebrow">NEW INVOICE</span>
             <h2>Create Invoice</h2>
-            <p>Enter the customer and payment details below.</p>
+            <p>After saving, RicozLeads creates a Razorpay payment link for the customer.</p>
 
             <form className="invoice-form" onSubmit={saveInvoice}>
               <label>Invoice number<input value={form.invoice_number} onChange={e=>change('invoice_number',e.target.value)} required /></label>
               <label>Customer name<input value={form.customer_name} onChange={e=>change('customer_name',e.target.value)} placeholder="Customer name" required /></label>
-              <label>Customer email<input type="email" value={form.customer_email} onChange={e=>change('customer_email',e.target.value)} placeholder="customer@email.com" /></label>
+              <label>Customer email<input type="email" value={form.customer_email} onChange={e=>change('customer_email',e.target.value)} placeholder="customer@email.com" required /></label>
               <label>Amount (₹)<input type="number" min="1" step="0.01" value={form.amount} onChange={e=>change('amount',e.target.value)} placeholder="0.00" required /></label>
               <label>Due date<input type="date" value={form.due_date} onChange={e=>change('due_date',e.target.value)} /></label>
               <label>Status<select value={form.status} onChange={e=>change('status',e.target.value)}><option>Pending</option><option>Paid</option><option>Cancelled</option></select></label>
@@ -655,7 +703,7 @@ function InvoiceView({session,leads}) {
 
               <div className="invoice-actions invoice-full">
                 <button type="button" className="secondary-button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
-                <button className="primary-button" disabled={saving}>{saving ? 'Saving...' : 'Save Invoice'}</button>
+                <button className="primary-button" disabled={saving}>{saving ? 'Saving...' : 'Save & Send Payment Link'}</button>
               </div>
             </form>
           </section>
@@ -683,6 +731,16 @@ function InvoiceView({session,leads}) {
                 <select className={`status-select ${invoice.status?.toLowerCase()}`} value={invoice.status} onChange={e=>updateInvoiceStatus(invoice.id,e.target.value)}>
                   <option>Pending</option><option>Paid</option><option>Cancelled</option>
                 </select>
+                {invoice.status === 'Pending' && (
+                  <button
+                    className="secondary-button invoice-pay-button"
+                    disabled={sendingId === invoice.id}
+                    onClick={() => createPaymentLink(invoice.id)}
+                  >
+                    {sendingId === invoice.id ? 'Sending...' : invoice.payment_link_url ? 'Resend Pay Link' : 'Send Pay Link'}
+                  </button>
+                )}
+                {invoice.status === 'Paid' && <span className="invoice-paid-badge">Payment received</span>}
                 <button className="delete-link invoice-delete" onClick={()=>removeInvoice(invoice.id)}>Delete</button>
               </article>
             ))}

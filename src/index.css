@@ -134,36 +134,21 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   box-shadow:0 8px 24px rgba(50,80,140,.035);
 }
 
-/* Functional invoice workspace */
-.invoice-metrics{grid-template-columns:repeat(4,1fr);margin-bottom:15px}
-.invoice-list{display:flex;flex-direction:column;gap:8px}
-.invoice-row{display:grid;grid-template-columns:1.1fr 1.4fr .8fr .9fr auto auto;align-items:center;gap:14px;border:1px solid #edf0f4;border-radius:13px;padding:14px;background:#fff}
-.invoice-number{display:flex;align-items:center;gap:9px}
-.invoice-number span{width:35px;height:35px;border-radius:9px;background:#eef4ff;display:grid;place-items:center}
-.invoice-number strong,.invoice-customer strong{font-size:11px}
-.invoice-customer small,.invoice-row>div>strong,.invoice-label{display:block}
-.invoice-customer small,.invoice-label{font-size:9px;color:#8290a4;margin-top:3px}
-.invoice-row>div>strong{font-size:11px}
-.invoice-delete{border:0;background:#fff0f2;color:#dc5365;border-radius:7px;padding:7px 9px;font-size:9px}
-.invoice-modal{width:min(620px,100%);max-height:90vh;overflow:auto}
-.invoice-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;text-align:left}
-.invoice-form label{font-size:10px;font-weight:800;color:#58657c}
-.invoice-form input,.invoice-form textarea,.invoice-form select{display:block;width:100%;border:1px solid #dfe4ec;background:#fbfcfe;border-radius:9px;padding:11px;margin-top:6px;font-size:11px}
-.invoice-full{grid-column:1/-1}
-.invoice-lead-picker{padding:11px;background:#f7f9fc;border:1px solid #edf0f4;border-radius:10px}
-.invoice-lead-picker small{display:block;color:#7d899e;font-size:9px;margin-bottom:8px}
-.invoice-lead-picker>div{display:flex;gap:7px;flex-wrap:wrap}
-.invoice-lead-picker .secondary-button{padding:7px 10px;font-size:9px}
-.invoice-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 
-@media(max-width:900px){
-  .invoice-row{grid-template-columns:1fr 1fr}
-  .invoice-row .status-select,.invoice-delete{justify-self:start}
+/* Razorpay payment flow */
+.invoice-pay-button {
+  min-width: 132px;
+  white-space: nowrap;
 }
-@media(max-width:560px){
-  .invoice-metrics{grid-template-columns:repeat(2,1fr)}
-  .invoice-form{grid-template-columns:1fr}
-  .invoice-full{grid-column:auto}
-  .invoice-actions{grid-column:1}
+.invoice-paid-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(34,197,94,.10);
+  color: #15803d;
+  white-space: nowrap;
 }
-
