@@ -373,7 +373,7 @@ function Dashboard({ session, logout }) {
           {view === 'followups' && <FollowupsView leads={leads} today={today} overdue={overdue} dueToday={dueToday} editLead={editLead} />}
           {view === 'analytics' && <AnalyticsView leads={leads} converted={converted} conversionRate={conversionRate} count={count} />}
           {view === 'documents' && <ModuleView icon="📁" title="Documents Hub" text="Keep proposals, brochures and customer files organized beside your sales pipeline." items={['Proposal templates','Product brochures','Customer documents','Shared team files']} />}
-          {view === 'invoices' && <ModuleView icon="₹" title="Invoices & Payments" text="Keep revenue conversations connected to your leads. Payment integration can be added next." items={['Create invoice','Pending payments','Paid invoices','Revenue summary']} />}
+          {view === 'invoices' && <InvoiceView session={session} leads={leads} />}
           {view === 'team' && <ModuleView icon="♙" title="Team Workspace" text="A team-ready area for assigning leads, sharing notes and monitoring activity." items={['Team members','Lead assignment','Activity feed','Roles & permissions']} />}
           {view === 'ai' && <AIView leads={leads} overdue={overdue} dueToday={dueToday} conversionRate={conversionRate} setAiOpen={setAiOpen} />}
           {view === 'settings' && <SettingsView session={session} navigate={navigate} setMessage={setMessage} message={message} />}
@@ -489,6 +489,208 @@ function AnalyticsView({leads,converted,conversionRate,count}) {
 
 function AIView({leads,overdue,dueToday,conversionRate,setAiOpen}) {
   return <div className="dashboard-content"><section className="page-intro"><div><span className="eyebrow">RICO INTELLIGENCE</span><h2>Rico AI Center</h2><p>Your workspace assistant for prioritization, summaries and next-step ideas.</p></div><button className="primary-button" onClick={()=>setAiOpen(true)}>Open Rico →</button></section><div className="ai-center-grid"><div className="ai-hero-card"><div className="ai-orb">🤖</div><span className="eyebrow">TODAY'S BRIEF</span><h3>{overdue.length ? `You have ${overdue.length} overdue lead${overdue.length>1?'s':''}.` : 'Your pipeline is clear.'}</h3><p>{dueToday.length ? `${dueToday.length} follow-ups are due today. ` : ''}Current conversion rate: {conversionRate}%.</p><button className="primary-button" onClick={()=>setAiOpen(true)}>Ask Rico anything</button></div><div className="panel"><PanelHead eyebrow="SUGGESTIONS" title="What Rico can help with"/>{['Which leads should I contact first?','Explain my conversion rate','How do I manage follow-ups?','What should I do with a new lead?'].map(x=><button className="suggestion" key={x} onClick={()=>setAiOpen(true)}>✦ {x}<b>→</b></button>)}</div></div></div>
+}
+
+function InvoiceView({session,leads}) {
+  const emptyInvoice = {
+    invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+    customer_name: '',
+    customer_email: '',
+    amount: '',
+    due_date: '',
+    status: 'Pending',
+    notes: '',
+  }
+
+  const [invoices, setInvoices] = useState([])
+  const [form, setForm] = useState(emptyInvoice)
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const [filter, setFilter] = useState('All')
+
+  async function loadInvoices() {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+    setInvoices(data || [])
+  }
+
+  useEffect(() => {
+    loadInvoices()
+  }, [])
+
+  function openCreate() {
+    setForm({
+      ...emptyInvoice,
+      invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+    })
+    setMessage('')
+    setShowForm(true)
+  }
+
+  function change(key, value) {
+    setForm(current => ({ ...current, [key]: value }))
+  }
+
+  function useLead(lead) {
+    setForm(current => ({
+      ...current,
+      customer_name: lead.full_name || '',
+      customer_email: lead.email || '',
+    }))
+  }
+
+  async function saveInvoice(event) {
+    event.preventDefault()
+    if (!form.customer_name.trim()) return setMessage('Customer name is required.')
+    if (!form.amount || Number(form.amount) <= 0) return setMessage('Enter a valid invoice amount.')
+
+    setSaving(true)
+    setMessage('Creating invoice...')
+
+    const payload = {
+      invoice_number: form.invoice_number.trim(),
+      customer_name: form.customer_name.trim(),
+      customer_email: form.customer_email.trim() || null,
+      amount: Number(form.amount),
+      due_date: form.due_date || null,
+      status: form.status,
+      notes: form.notes.trim() || null,
+      user_id: session.user.id,
+    }
+
+    const { error } = await supabase.from('invoices').insert([payload])
+
+    setSaving(false)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    setMessage('Invoice created successfully.')
+    setShowForm(false)
+    setForm({
+      ...emptyInvoice,
+      invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+    })
+    await loadInvoices()
+  }
+
+  async function updateInvoiceStatus(id, status) {
+    const { error } = await supabase.from('invoices').update({ status }).eq('id', id)
+    if (error) return setMessage(error.message)
+    setInvoices(items => items.map(item => item.id === id ? { ...item, status } : item))
+  }
+
+  async function removeInvoice(id) {
+    if (!window.confirm('Delete this invoice?')) return
+    const { error } = await supabase.from('invoices').delete().eq('id', id)
+    if (error) return setMessage(error.message)
+    setInvoices(items => items.filter(item => item.id !== id))
+    setMessage('Invoice deleted successfully.')
+  }
+
+  const visible = filter === 'All'
+    ? invoices
+    : invoices.filter(invoice => invoice.status === filter)
+
+  const total = invoices.reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0)
+  const pending = invoices.filter(invoice => invoice.status === 'Pending')
+  const paid = invoices.filter(invoice => invoice.status === 'Paid')
+
+  return (
+    <div className="dashboard-content invoice-page">
+      <section className="page-intro">
+        <div>
+          <span className="eyebrow">REVENUE WORKSPACE</span>
+          <h2>Invoices & Payments</h2>
+          <p>Create invoices, track payment status and keep revenue activity connected to your workspace.</p>
+        </div>
+        <button className="primary-button" onClick={openCreate}>+ Create Invoice</button>
+      </section>
+
+      {message && <div className="settings-message">✓ {message}</div>}
+
+      <section className="metric-grid invoice-metrics">
+        <Metric label="Total Invoices" value={invoices.length} icon="🧾" hint="Created invoices" />
+        <Metric label="Pending" value={pending.length} icon="⏳" hint="Awaiting payment" />
+        <Metric label="Paid" value={paid.length} icon="✓" hint="Completed payments" />
+        <Metric label="Revenue" value={`₹${total.toLocaleString('en-IN')}`} icon="₹" hint="Invoice value" />
+      </section>
+
+      {showForm && (
+        <div className="module-modal-backdrop" onClick={() => !saving && setShowForm(false)}>
+          <section className="module-modal invoice-modal" onClick={e => e.stopPropagation()}>
+            <button className="module-modal-close" type="button" onClick={() => !saving && setShowForm(false)}>×</button>
+            <div className="module-modal-icon">🧾</div>
+            <span className="eyebrow">NEW INVOICE</span>
+            <h2>Create Invoice</h2>
+            <p>Enter the customer and payment details below.</p>
+
+            <form className="invoice-form" onSubmit={saveInvoice}>
+              <label>Invoice number<input value={form.invoice_number} onChange={e=>change('invoice_number',e.target.value)} required /></label>
+              <label>Customer name<input value={form.customer_name} onChange={e=>change('customer_name',e.target.value)} placeholder="Customer name" required /></label>
+              <label>Customer email<input type="email" value={form.customer_email} onChange={e=>change('customer_email',e.target.value)} placeholder="customer@email.com" /></label>
+              <label>Amount (₹)<input type="number" min="1" step="0.01" value={form.amount} onChange={e=>change('amount',e.target.value)} placeholder="0.00" required /></label>
+              <label>Due date<input type="date" value={form.due_date} onChange={e=>change('due_date',e.target.value)} /></label>
+              <label>Status<select value={form.status} onChange={e=>change('status',e.target.value)}><option>Pending</option><option>Paid</option><option>Cancelled</option></select></label>
+              <label className="invoice-full">Notes<textarea rows="3" value={form.notes} onChange={e=>change('notes',e.target.value)} placeholder="Optional invoice notes..." /></label>
+
+              {leads.length > 0 && (
+                <div className="invoice-full invoice-lead-picker">
+                  <small>Quick fill from a converted lead</small>
+                  <div>{leads.filter(l => l.status === 'Converted').slice(0,5).map(lead =>
+                    <button key={lead.id} type="button" className="secondary-button" onClick={() => useLead(lead)}>{lead.full_name}</button>
+                  )}</div>
+                </div>
+              )}
+
+              <div className="invoice-actions invoice-full">
+                <button type="button" className="secondary-button" onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
+                <button className="primary-button" disabled={saving}>{saving ? 'Saving...' : 'Save Invoice'}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      <section className="panel">
+        <div className="list-toolbar">
+          <div><span className="eyebrow">INVOICE RECORDS</span><h3>{visible.length} invoices</h3></div>
+          <select value={filter} onChange={e=>setFilter(e.target.value)}>
+            <option>All</option><option>Pending</option><option>Paid</option><option>Cancelled</option>
+          </select>
+        </div>
+
+        {visible.length === 0 ? (
+          <Empty icon="🧾" text="No invoices yet. Click Create Invoice to add your first invoice." />
+        ) : (
+          <div className="invoice-list">
+            {visible.map(invoice => (
+              <article className="invoice-row" key={invoice.id}>
+                <div className="invoice-number"><span>🧾</span><strong>{invoice.invoice_number}</strong></div>
+                <div className="invoice-customer"><strong>{invoice.customer_name}</strong><small>{invoice.customer_email || 'No email'}</small></div>
+                <div><small className="invoice-label">Amount</small><strong>₹{Number(invoice.amount || 0).toLocaleString('en-IN')}</strong></div>
+                <div><small className="invoice-label">Due</small><strong>{invoice.due_date || 'No date'}</strong></div>
+                <select className={`status-select ${invoice.status?.toLowerCase()}`} value={invoice.status} onChange={e=>updateInvoiceStatus(invoice.id,e.target.value)}>
+                  <option>Pending</option><option>Paid</option><option>Cancelled</option>
+                </select>
+                <button className="delete-link invoice-delete" onClick={()=>removeInvoice(invoice.id)}>Delete</button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )
 }
 
 function ModuleView({icon,title,text,items}) {
